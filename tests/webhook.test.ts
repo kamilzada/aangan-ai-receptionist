@@ -52,6 +52,31 @@ describe("Vaani payload parser", () => {
     expect(c.transcript).toBe("AGENT: Hello\nUSER: Hi");
   });
 
+  it("reads the real events Vaani sent in its connectivity test (10 Oct 2026)", () => {
+    const post = parseVaaniPayload({
+      event: "call_postprocessing",
+      call_id: "test_room_123",
+      timestamp: "2026-10-10T13:32:30.688387+00:00",
+      data: {
+        room_name: "test_room_123",
+        call_id: "test_room_123",
+        call_duration: 120,
+        end_reason: "completed",
+        summary: "This is a sample summary for testing.",
+        entities: { customer_name: "John Doe", intent: "inquiry" },
+        dispositions: { call_disposition: "Interested" },
+        recording_url: "https://example.com/recording.mp3",
+        transcript: "Agent: Hello\nUser: Hi",
+      },
+    });
+    expect(post).toMatchObject({ event: "call_postprocessing", callId: "test_room_123", durationSec: 120, transcript: "Agent: Hello\nUser: Hi" });
+    const started = parseVaaniPayload({
+      event: "call_started",
+      data: { room_name: "test_room_123", call_id: "test_room_123", phone_number: "+919876543210", call_type: "Outbound" },
+    });
+    expect(started).toMatchObject({ event: "call_started", callId: "test_room_123", callerPhone: "+919876543210" });
+  });
+
   it("survives an empty body", () => {
     const c = parseVaaniPayload({});
     expect(c.callId).toBeNull();
