@@ -5,6 +5,8 @@
 import type { Designer } from "./designers";
 import type { Lead } from "./brief";
 import { sendTelegram, telegramEnabled } from "./telegram";
+import { resendEnabled, sendConfirmationEmail } from "./email";
+import { config } from "./config";
 
 export type SendResult = "sent" | "skipped" | "failed";
 
@@ -26,6 +28,24 @@ export type Meeting = { start: Date; end: Date; when: string; eventId: string };
 
 export async function sendClientEmail(lead: Lead, meeting: Meeting, designer: Designer): Promise<SendResult> {
   if (lead.email_confirmation !== "yes" || !lead.email) return "skipped";
-  console.log(`[notify] Email to ${lead.email} for ${meeting.when} with ${designer.name} (Phase 4 not built yet)`);
-  return "skipped";
+  if (!resendEnabled()) {
+    console.warn("[notify] RESEND_API_KEY / EMAIL_FROM not set; confirmation email not sent");
+    return "failed";
+  }
+  try {
+    await sendConfirmationEmail({
+      to: lead.email,
+      clientName: lead.caller_name,
+      designerName: designer.name,
+      when: meeting.when,
+      start: meeting.start,
+      end: meeting.end,
+      address: config.studioAddress,
+      eventId: meeting.eventId,
+    });
+    return "sent";
+  } catch (err) {
+    console.error("[notify] confirmation email failed", err);
+    return "failed";
+  }
 }
