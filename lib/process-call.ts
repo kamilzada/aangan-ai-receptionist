@@ -3,8 +3,7 @@
  * Idempotent on the Vaani call id: Supabase `calls` row when configured, plus a HubSpot lookup as a second guard.
  */
 import { createHash } from "node:crypto";
-import { classifyWithUsage, type CallClassification } from "./classify";
-import { aiCostInr, type TokenUsage } from "./cost";
+import { classifyTranscript, type CallClassification } from "./classify";
 import { db, dbEnabled } from "./db";
 import { isAfterHours } from "./hours";
 import { createCall, createDeal, findCallByVaaniId, hubspotEnabled, upsertContactByPhone } from "./hubspot";
@@ -21,7 +20,6 @@ export type ProcessResult =
       classification: Pick<CallClassification, "call_type" | "outcome" | "decline_reason">;
       hubspotCallId: string | null;
       complaintAlert: "sent" | "skipped" | "failed";
-      aiCostInr: number;
     };
 
 type CallRow = { vaani_call_id: string; status: string; caller_phone: string | null };
@@ -103,12 +101,9 @@ export async function processVaaniCall(raw: unknown, rawText: string): Promise<P
 
 async function handle(call: VaaniCall, callId: string): Promise<Extract<ProcessResult, { status: "done" }>> {
   let cls: CallClassification = DROPPED;
-  let usage: TokenUsage | undefined;
   const hasConversation = call.transcript.replace(/\[[^\]]*\]/g, "").length > 80;
   if (hasConversation && !["call_no_answer", "call_failed"].includes(call.event)) {
-    const r = await classifyWithUsage(call.transcript);
-    cls = r.result;
-    usage = r.usage;
+    cls = await classifyTranscript(call.transcript);
   }
 
   // Ground truth beats the model: if the booking endpoint booked this caller during the call, it's booked.
@@ -119,7 +114,6 @@ async function handle(call: VaaniCall, callId: string): Promise<Extract<ProcessR
   }
 
   const afterHours = isAfterHours(call.startedAt);
-  const cost = aiCostInr({ durationSec: call.durationSec, usage, vaaniCostInr: call.vaaniCostInr });
 
   const complaintAlert = cls.call_type === "complaint" ? await alertNikhil(call, cls) : "skipped";
 
@@ -157,7 +151,6 @@ async function handle(call: VaaniCall, callId: string): Promise<Extract<ProcessR
       outcome: cls.outcome,
       declineReason: cls.decline_reason,
       afterHours,
-      aiCostInr: cost,
       contactId,
       dealId,
     });
@@ -171,7 +164,6 @@ async function handle(call: VaaniCall, callId: string): Promise<Extract<ProcessR
     classification: { call_type: cls.call_type, outcome: cls.outcome, decline_reason: cls.decline_reason },
     hubspotCallId,
     complaintAlert,
-    aiCostInr: cost,
   };
 }
 

@@ -1,6 +1,5 @@
 import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { aiCostInr } from "@/lib/cost";
 import { normalizePhone, parseVaaniPayload, webhookAuthorized } from "@/lib/vaani-webhook";
 
 // The documented call_postprocessing example (docs.vaanivoice.ai/guides/webhook-setup), plus a phone number.
@@ -91,16 +90,6 @@ describe("webhook auth", () => {
   });
 });
 
-describe("AI cost", () => {
-  it("adds voice minutes and Gemini tokens", () => {
-    process.env.VAANI_COST_PER_MIN_INR = "6";
-    process.env.USD_INR = "88";
-    // 4 min voice = ₹24; 4,000 in + 500 out tokens = (0.0012 + 0.00125) USD = ₹0.2156
-    expect(aiCostInr({ durationSec: 240, usage: { input: 4000, output: 500 } })).toBe(24.22);
-    expect(aiCostInr({ durationSec: 240, vaaniCostInr: 10 })).toBe(10);
-  });
-});
-
 describe("processVaaniCall", () => {
   const sent: { chat: string | number; text: string }[] = [];
   beforeEach(() => {
@@ -117,7 +106,7 @@ describe("processVaaniCall", () => {
   afterEach(() => vi.doUnmock("@/lib/telegram"));
 
   it("marks a call with no conversation as dropped without calling Gemini", async () => {
-    vi.doMock("@/lib/classify", () => ({ classifyWithUsage: vi.fn(() => Promise.reject(new Error("should not be called"))) }));
+    vi.doMock("@/lib/classify", () => ({ classifyTranscript: vi.fn(() => Promise.reject(new Error("should not be called"))) }));
     const { processVaaniCall } = await import("@/lib/process-call");
     const r = await processVaaniCall({ event: "call_postprocessing", data: { call_id: "d1", transcript: "[00:01] AGENT: Hello?" } }, "{}");
     expect(r).toMatchObject({ status: "done", classification: { call_type: "dropped", outcome: "no_booking" } });
@@ -126,8 +115,7 @@ describe("processVaaniCall", () => {
 
   it("alerts Nikhil on a complaint", async () => {
     vi.doMock("@/lib/classify", () => ({
-      classifyWithUsage: async () => ({
-        result: {
+      classifyTranscript: async () => ({
           call_type: "complaint",
           outcome: "escalated",
           decline_reason: "none",
@@ -140,8 +128,6 @@ describe("processVaaniCall", () => {
           scope: "",
           timeline: "",
           budget_note: "",
-        },
-        usage: { input: 3000, output: 300 },
       }),
     }));
     const { processVaaniCall } = await import("@/lib/process-call");

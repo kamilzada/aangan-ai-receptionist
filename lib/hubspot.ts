@@ -1,7 +1,7 @@
 /**
  * HubSpot (free CRM) over the v3 REST API, server-side only.
  * Free plan: 10 custom properties for the whole account and one deal pipeline. So:
- * - 6 custom properties on Calls (CALL_PROPS) + 1 on Contacts (aangan_locality) = 7 of 10.
+ * - 5 custom properties on Calls (CALL_PROPS) + 1 on Contacts (aangan_locality) = 6 of 10.
  * - Deals go in the default "Sales Pipeline" at the built-in "Appointment scheduled" stage.
  * - Designers aren't HubSpot users (free plan has 2 seats), so the deal name carries the designer.
  * Create the properties once with `npm run hubspot:setup`.
@@ -45,7 +45,6 @@ export const CALL_PROPS = {
   aangan_call_type: { label: "Aangan · call type", type: "string", fieldType: "text" },
   aangan_outcome: { label: "Aangan · outcome", type: "string", fieldType: "text" },
   aangan_decline_reason: { label: "Aangan · decline reason", type: "string", fieldType: "text" },
-  aangan_ai_cost_inr: { label: "Aangan · AI cost (INR)", type: "number", fieldType: "number" },
   aangan_after_hours: { label: "Aangan · after hours", type: "enumeration", fieldType: "booleancheckbox" },
   aangan_vaani_call_id: { label: "Aangan · Vaani call id", type: "string", fieldType: "text" },
 } as const;
@@ -132,7 +131,6 @@ export type CallRecord = {
   outcome: string;
   declineReason: string;
   afterHours: boolean;
-  aiCostInr: number;
   contactId?: string;
   dealId?: string;
 };
@@ -157,7 +155,6 @@ export async function createCall(c: CallRecord): Promise<string> {
       aangan_outcome: c.outcome,
       aangan_decline_reason: c.declineReason,
       aangan_after_hours: c.afterHours ? "true" : "false",
-      aangan_ai_cost_inr: String(c.aiCostInr),
     },
     associations,
   });
@@ -174,7 +171,6 @@ export type CallRow = {
   outcome: string;
   declineReason: string;
   afterHours: boolean;
-  aiCostInr: number;
 };
 
 /** Every AI-handled call since `since` (newest first), for the dashboard. */
@@ -208,7 +204,6 @@ export async function listAiCalls(since: Date, max = 2000): Promise<CallRow[]> {
         outcome: p.aangan_outcome ?? "no_booking",
         declineReason: p.aangan_decline_reason ?? "none",
         afterHours: p.aangan_after_hours === "true",
-        aiCostInr: Number(p.aangan_ai_cost_inr ?? 0),
       });
     }
     after = r.paging?.next?.after;

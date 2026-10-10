@@ -60,7 +60,6 @@ const Data = z
     summary: z.string().optional(),
     recording_url: z.string().optional(),
     transcript: z.union([z.string(), z.array(Turn)]).optional(),
-    cost: z.number().optional(),
   })
   .passthrough();
 
@@ -86,7 +85,6 @@ export type VaaniCall = {
   summary: string;
   endReason: string;
   recordingUrl: string | null;
-  vaaniCostInr: number | null;
 };
 
 /** Vaani omits the zone on some timestamps; those are UTC. */
@@ -131,6 +129,5 @@ export function parseVaaniPayload(body: unknown): VaaniCall {
     summary: d.summary ?? "",
     endReason: d.end_reason ?? "",
     recordingUrl: d.recording_url ?? null,
-    vaaniCostInr: typeof d.cost === "number" ? d.cost : null,
   };
 }

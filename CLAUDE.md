@@ -98,13 +98,13 @@ Transcript: <link>
 Server-rendered, passcode via `DASHBOARD_PASSCODE` (cookie). Reads HubSpot server-side; token never reaches the browser.
 Metrics: calls handled by AI, after-hours share, meetings booked, booking rate on qualified leads,
 decline reasons (outside area, advice only, out-of-scope type, timeline, budget, too small),
-complaints escalated, AI cost per call / per month / per booked meeting, daily trend, latest calls table.
+complaints escalated, daily trend, latest calls table. (AI cost removed at the user's request, 10 Oct 2026.)
 Do **not** track how many callers want email confirmation (user said not needed).
 
 ## HubSpot data model (verify free-plan limits before building)
 - Contact: phone (key), name, email, locality.
 - Call/engagement per call, linked to contact, with custom properties: `aangan_call_type`, `aangan_outcome`,
-  `aangan_decline_reason`, `aangan_ai_cost_inr`, `aangan_after_hours`, `aangan_vaani_call_id`.
+  `aangan_decline_reason`, `aangan_after_hours`, `aangan_vaani_call_id`.
 - Deal for booked meetings, pipeline "AI receptionist", stage "Designer meeting booked", owner = designer.
 If custom properties on calls are not available on the free plan, store them on a Deal per call instead, and say so.
 
