@@ -1,0 +1,46 @@
+:root {
+  color-scheme: light;
+  --linen: #f5f0e8;
+  --paper: #fffdf9;
+  --oak: #b08a5e;
+  --oak-ink: #8a6a44;
+  --terracotta: #c46a4a;
+  --terracotta-soft: #f1ddd3;
+  --charcoal: #2b2925;
+  --muted: #6b645a;
+  --faint: #8a8276;
+  --stone: #e2dacd;
+  --radius: 12px;
+  --serif: var(--font-serif), "Cormorant Garamond", Georgia, serif;
+  --sans: var(--font-sans), Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--linen);
+  color: var(--charcoal);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; }
+
+/* Hover / focus tooltips for chart marks */
+[data-tip] { position: relative; }
+[data-tip]:hover::after, [data-tip]:focus-visible::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--charcoal);
+  color: var(--linen);
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 5;
+  pointer-events: none;
+}
