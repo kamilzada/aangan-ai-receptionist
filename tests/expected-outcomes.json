@@ -1,0 +1,23 @@
+{
+  "_note": "Expected classification for the 20 phone transcripts in context/enquiries-sept-2026.txt (Section 1). Decision-maker criterion dropped.",
+  "T01": { "call_type": "new_lead", "outcome": "booked" },
+  "T02": { "call_type": "new_lead", "outcome": "booked", "note": "pushed on price twice; deflected" },
+  "T03": { "call_type": "new_lead", "outcome": "declined", "decline_reason": "outside_service_area" },
+  "T04": { "call_type": "new_lead", "outcome": "declined", "decline_reason": "advice_only" },
+  "T05": { "call_type": "new_lead", "outcome": "booked", "note": "referral from Nikhil's friend" },
+  "T06": { "call_type": "new_lead", "outcome": "booked", "note": "commercial 800 sq ft" },
+  "T07": { "call_type": "new_lead", "outcome": "deferred", "decline_reason": "timeline_under_6_weeks" },
+  "T08": { "call_type": "dropped", "outcome": "no_booking", "note": "missed call, no transcript" },
+  "T09": { "call_type": "complaint", "outcome": "escalated" },
+  "T10": { "call_type": "new_lead", "outcome": "declined", "decline_reason": "budget_clearly_too_low" },
+  "T11": { "call_type": "new_lead", "outcome": "booked", "note": "rented, no structural change: fine" },
+  "T12": { "call_type": "new_lead", "outcome": "booked" },
+  "T13": { "call_type": "new_lead", "outcome": "booked", "note": "pushed on price twice; deflected" },
+  "T14": { "call_type": "new_lead", "outcome": "booked", "note": "son calling for parents; decision-maker not asked" },
+  "T15": { "call_type": "new_lead", "outcome": "booked" },
+  "T16": { "call_type": "repeat_caller", "outcome": "booked", "note": "earlier enquiry lost" },
+  "T17": { "call_type": "new_lead", "outcome": "booked", "note": "first attempt dropped" },
+  "T18": { "call_type": "new_lead", "outcome": "declined", "decline_reason": "too_small" },
+  "T19": { "call_type": "new_lead", "outcome": "declined", "decline_reason": "out_of_scope_type" },
+  "T20": { "call_type": "new_lead", "outcome": "booked" }
+}
