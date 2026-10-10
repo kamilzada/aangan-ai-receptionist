@@ -46,7 +46,7 @@ async function handle(req: Request): Promise<Response> {
     return Response.json({ ok: false, slots: [], message: "No bookable times in the next week." });
   }
 
-  const designers = rotate(loadDesigners(), await getStore().getLastCode());
+  const designers = rotate(await loadDesigners(), await getStore().getLastCode());
   const timeMax = new Date(candidates[candidates.length - 1].getTime() + config.meetingMinutes * 60_000);
   const { busy, errors } = await freeBusy(designers.map((d) => d.calendarId), candidates[0], timeMax);
   if (Object.keys(errors).length) console.warn("[slots] calendars not readable:", errors);

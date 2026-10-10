@@ -1,12 +1,14 @@
 import { z } from "zod";
 import { hasVaaniSecret, unauthorized } from "@/lib/auth";
-import { buildBrief, type Lead } from "@/lib/brief";
+import { briefFlags, buildBrief, type EmailStatus, type Lead } from "@/lib/brief";
 import { config } from "@/lib/config";
 import { findDesigner } from "@/lib/designers";
 import { freeBusy, insertEvent } from "@/lib/google-calendar";
 import { sendClientEmail, sendDesignerBrief } from "@/lib/notify";
 import { getStore } from "@/lib/roundrobin";
-import { candidateStarts, decodeSlotId, encodeSlotId, isFree, spoken, spreadPick } from "@/lib/slots";
+import { candidateStarts, decodeSlotId, encodeSlotId, isFree, shortWhen, spoken, spreadPick } from "@/lib/slots";
+import { db, dbEnabled } from "@/lib/db";
+import { isAfterHours } from "@/lib/hours";
 import { readToolParams } from "@/lib/vaani";
 import { toolFailure } from "@/lib/errors";
 
@@ -68,7 +70,7 @@ async function handle(req: Request): Promise<Response> {
   const lead = parsed.data;
 
   const slot = decodeSlotId(lead.slot_id);
-  const designer = slot && findDesigner(slot.designerCode);
+  const designer = slot ? await findDesigner(slot.designerCode) : undefined;
   if (!slot || !designer) {
     return Response.json({ ok: false, reason: "unknown_slot", say: "Let me check the available times again." }, { status: 400 });
   }
@@ -106,10 +108,10 @@ async function handle(req: Request): Promise<Response> {
   }
 
   const when = spoken(start);
-  const brief = buildBrief(lead, when);
+  const flags = briefFlags(lead, now, isAfterHours);
   const event = await insertEvent(designer.calendarId, {
     summary: `Aangan design meeting · ${lead.caller_name} (${lead.property_type}, ${lead.locality})`,
-    description: brief,
+    description: buildBrief(lead, shortWhen(start), { heading: "Designer meeting", flags }),
     location: config.studioAddress,
     start,
     end,
@@ -117,10 +119,23 @@ async function handle(req: Request): Promise<Response> {
   });
 
   await getStore().setLastCode(designer.code);
-  const [designerBrief, clientEmail] = await Promise.all([
-    sendDesignerBrief(designer, brief),
-    sendClientEmail(lead, when, designer),
-  ]);
+  if (dbEnabled()) {
+    await db
+      .insert("bookings", {
+        caller_phone: lead.caller_phone,
+        caller_name: lead.caller_name,
+        designer_code: designer.code,
+        start_at: start.toISOString(),
+        event_id: event.id,
+      })
+      .catch((err) => console.error("[book] could not record booking", err));
+  }
+
+  // Email first so the designer's brief can say whether the client got it.
+  const clientEmail = await sendClientEmail(lead, { start, end, when, eventId: event.id }, designer);
+  const emailStatus: EmailStatus =
+    lead.email_confirmation !== "yes" || !lead.email ? "declined" : clientEmail === "sent" ? "sent" : "failed";
+  const designerBrief = await sendDesignerBrief(designer, buildBrief(lead, shortWhen(start), { emailStatus, flags }));
 
   return Response.json({
     ok: true,

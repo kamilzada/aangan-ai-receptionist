@@ -1,8 +1,10 @@
 /**
  * Round-robin order of designers. The store remembers who was booked last; the next call starts
- * with the designer after them. Phase 2 uses an in-memory store (resets on cold start, fine for testing);
- * swap in a Supabase-backed store in a later phase without touching callers.
+ * with the designer after them. Supabase-backed (app_state.roundrobin_last) when configured,
+ * otherwise in-memory (resets on cold start, fine for local testing).
  */
+import { db, dbEnabled } from "./db";
+
 export interface RoundRobinStore {
   getLastCode(): Promise<string | null>;
   setLastCode(code: string): Promise<void>;
@@ -18,6 +20,17 @@ export const memoryStore: RoundRobinStore = {
   },
 };
 
+const KEY = "roundrobin_last";
+export const supabaseStore: RoundRobinStore = {
+  async getLastCode() {
+    const rows = await db.select<{ value: string | null }>("app_state", { key: `eq.${KEY}` });
+    return rows[0]?.value ?? null;
+  },
+  async setLastCode(code) {
+    await db.upsert("app_state", { key: KEY, value: code, updated_at: new Date().toISOString() });
+  },
+};
+
 export function rotate<T extends { code: string }>(items: T[], lastCode: string | null): T[] {
   const i = lastCode ? items.findIndex((d) => d.code === lastCode) : -1;
   if (i < 0) return items;
@@ -25,5 +38,5 @@ export function rotate<T extends { code: string }>(items: T[], lastCode: string 
 }
 
 export function getStore(): RoundRobinStore {
-  return memoryStore;
+  return dbEnabled() ? supabaseStore : memoryStore;
 }

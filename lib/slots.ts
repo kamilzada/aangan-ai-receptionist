@@ -155,3 +155,12 @@ export function spreadPick(starts: Date[], max: number): Date[] {
   for (let i = 0; i < starts.length && out.length < max; i += step) out.push(starts[i]);
   return out;
 }
+
+/** "Tue 14 Oct, 4:00 pm" (the designer brief header). */
+export function shortWhen(start: Date): string {
+  const p = istParts(start);
+  const h24 = Math.floor(p.minutesOfDay / 60);
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  const min = String(p.minutesOfDay % 60).padStart(2, "0");
+  return `${WEEKDAYS[p.weekday].slice(0, 3)} ${p.day} ${MONTHS[p.month].slice(0, 3)}, ${h12}:${min} ${h24 < 12 ? "am" : "pm"}`;
+}
