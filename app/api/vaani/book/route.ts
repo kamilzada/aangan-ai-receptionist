@@ -9,6 +9,7 @@ import { getStore } from "@/lib/roundrobin";
 import { candidateStarts, decodeSlotId, encodeSlotId, isFree, shortWhen, spoken, spreadPick } from "@/lib/slots";
 import { db, dbEnabled } from "@/lib/db";
 import { isAfterHours } from "@/lib/hours";
+import { normalizePhone } from "@/lib/vaani-webhook";
 import { readToolParams } from "@/lib/vaani";
 import { toolFailure } from "@/lib/errors";
 
@@ -122,7 +123,7 @@ async function handle(req: Request): Promise<Response> {
   if (dbEnabled()) {
     await db
       .insert("bookings", {
-        caller_phone: lead.caller_phone,
+        caller_phone: normalizePhone(lead.caller_phone) ?? lead.caller_phone,
         caller_name: lead.caller_name,
         designer_code: designer.code,
         start_at: start.toISOString(),

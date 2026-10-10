@@ -34,7 +34,8 @@ create index if not exists bookings_phone_created on bookings (caller_phone, cre
 -- One row per Vaani call. The primary key makes the end-of-call webhook idempotent.
 create table if not exists calls (
   vaani_call_id     text primary key,
-  status            text not null default 'processing',   -- processing | done | failed
+  status            text not null default 'processing',   -- started | processing | done | failed
+  caller_phone      text,                                 -- from call_started, in case post-processing omits it
   call_type         text,
   outcome           text,
   hubspot_call_id   text,

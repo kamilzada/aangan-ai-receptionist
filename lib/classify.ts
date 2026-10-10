@@ -26,6 +26,8 @@ export const CallClassification = z.object({
   timeline: z.string().default(""),
   budget_note: z.string().default(""),
   summary: z.string().default(""),
+  caller_name: z.string().default(""),
+  caller_email: z.string().default(""),
 });
 export type CallClassification = z.infer<typeof CallClassification>;
 
@@ -45,6 +47,8 @@ const jsonSchema = {
     timeline: { type: "string" },
     budget_note: { type: "string" },
     summary: { type: "string", description: "One sentence for the designer." },
+    caller_name: { type: "string", description: "Caller's name if they said it, else empty." },
+    caller_email: { type: "string", description: "Email address the caller confirmed, else empty." },
   },
   required: ["call_type", "outcome", "decline_reason", "summary"],
 };
@@ -76,6 +80,12 @@ Never include any price figure in the output.`;
 let ai: GoogleGenAI | null = null;
 
 export async function classifyTranscript(transcript: string): Promise<CallClassification> {
+  return (await classifyWithUsage(transcript)).result;
+}
+
+export async function classifyWithUsage(
+  transcript: string,
+): Promise<{ result: CallClassification; usage: { input: number; output: number } }> {
   if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not set.");
   ai ??= new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   const res = await ai.models.generateContent({
@@ -83,5 +93,10 @@ export async function classifyTranscript(transcript: string): Promise<CallClassi
     contents: `${CLASSIFY_INSTRUCTIONS}\n\nTRANSCRIPT:\n${transcript}`,
     config: { responseMimeType: "application/json", responseJsonSchema: jsonSchema, temperature: 0 },
   });
-  return CallClassification.parse(JSON.parse(res.text ?? "{}"));
+  const result = CallClassification.parse(JSON.parse(res.text ?? "{}"));
+  const u = res.usageMetadata;
+  return {
+    result,
+    usage: { input: u?.promptTokenCount ?? 0, output: (u?.candidatesTokenCount ?? 0) + (u?.thoughtsTokenCount ?? 0) },
+  };
 }

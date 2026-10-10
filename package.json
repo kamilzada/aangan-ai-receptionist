@@ -9,7 +9,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "replay": "tsx scripts/replay-transcripts.ts",
-    "telegram:setup": "tsx scripts/telegram-setup.ts"
+    "telegram:setup": "tsx scripts/telegram-setup.ts",
+    "hubspot:setup": "tsx scripts/hubspot-setup.ts",
+    "simulate-call": "tsx scripts/simulate-call.ts"
   },
   "dependencies": {
     "@google/genai": "^2.28.0",
