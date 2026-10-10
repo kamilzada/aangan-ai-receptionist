@@ -139,7 +139,11 @@ clean sans body (Inter). Generous whitespace, thin rules, rounded 12px cards, no
 - Prefer small, typed modules: `lib/google-calendar.ts`, `lib/hubspot.ts`, `lib/telegram.ts`, `lib/resend.ts`, `lib/gemini.ts`, `lib/roundrobin.ts`.
 
 ## Status (10 Oct 2026)
-- Phase 1: `lib/classify.ts` (Gemini Flash, JSON schema) + `scripts/replay-transcripts.ts` built. **Not yet run against Gemini** (needs `GEMINI_API_KEY`). Run `npm run replay`.
-- Phase 2: `/api/vaani/slots` and `/api/vaani/book` built and smoke-tested locally (auth, validation, graceful failure). **Not yet run against real Google Calendars.** Use `scripts/test-endpoints.sh`.
-- Slot logic is pure and unit-tested (`npm test`, 13 tests). Round-robin is in-memory until Supabase lands.
-- Telegram (`lib/notify.ts`) and Resend are stubs that log. Next: Phase 3.
+- All phases coded; 36 unit tests, typecheck and production build pass. Nothing has run against live services yet (no keys in `.env.local`).
+- Phase 1: `npm run replay` not yet run (needs `GEMINI_API_KEY`).
+- Phase 2: booking endpoints not yet run against real Google Calendars.
+- Phase 3: Telegram registration (`/api/telegram/webhook`) + briefs; roster, chat ids, round-robin and bookings in Supabase (`supabase/migrations/001_init.sql`), falling back to `DESIGNERS_JSON` + memory without Supabase.
+- Phase 4: Resend email + .ics, sent only on `email_confirmation = yes`.
+- Phase 5: `/api/vaani/webhook`. Parser built from Vaani's documented `call_postprocessing` shape, **not yet confirmed against a real payload**. Auth: `x-vaani-secret`, `?secret=` or HMAC. HubSpot uses 6 of the free plan's 10 custom properties (5 on Calls, 1 on Contacts); deals go in the default pipeline at "Appointment scheduled".
+- Phase 6: `/dashboard` (passcode cookie); shows sample data until HubSpot is configured. **AI cost was removed** at the user's request.
+- Phase 7: `docs/SETUP.md`, `docs/VAANI_SETUP.md`, `docs/TEST_PLAN.md`.
