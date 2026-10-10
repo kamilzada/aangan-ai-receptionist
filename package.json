@@ -11,7 +11,8 @@
     "replay": "tsx scripts/replay-transcripts.ts",
     "telegram:setup": "tsx scripts/telegram-setup.ts",
     "hubspot:setup": "tsx scripts/hubspot-setup.ts",
-    "simulate-call": "tsx scripts/simulate-call.ts"
+    "simulate-call": "tsx scripts/simulate-call.ts",
+    "google:auth": "tsx scripts/google-auth.ts"
   },
   "dependencies": {
     "@google/genai": "^2.28.0",

@@ -25,19 +25,23 @@ openssl rand -hex 24
 aistudio.google.com → **Get API key** → **Create API key** → `GEMINI_API_KEY`.
 Then run `npm run replay`. The target is 18 or more of the 20 September calls matching.
 
-## 3. Google Calendar (15 min)
-1. console.cloud.google.com → create a project → **APIs & Services → Library** → enable **Google Calendar API**.
-2. **IAM & Admin → Service accounts → Create**. No roles needed. Open it → **Keys → Add key → JSON**.
-3. From the JSON: `client_email` → `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `private_key` → `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`
-   (keep the `\n`s and wrap the value in double quotes).
-4. calendar.google.com → **Other calendars → + → Create new calendar** twice: "Designer Ananya" and "Designer Rohan".
-   For each: **Settings and sharing → Share with specific people →** the service-account email, **Make changes to events**.
-   Copy the **Calendar ID** (under *Integrate calendar*).
+## 3. Google Calendar (10 min)
+MESA's Google Workspace blocks service-account keys (`iam.disableServiceAccountKeyCreation`), so the app signs in
+as one Google account with OAuth and keeps a refresh token. Done on 10 Oct 2026 with the MESA account
+(project `aangan-receptionist`).
+1. console.cloud.google.com → create project → enable **Google Calendar API**.
+2. **Google Auth Platform → Get started**: app name, support email, Audience **Internal** (no Google review needed), contact email, agree → Create.
+3. **Clients → Create client → Desktop app** → copy the Client ID and secret into `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET`.
+4. `npm run google:auth`: sign in, click **Allow**. This saves `GOOGLE_OAUTH_REFRESH_TOKEN` and creates
+   "Aangan · Designer Ananya" and "Aangan · Designer Rohan" in that account, saving their IDs in `DESIGNERS_JSON`.
+   (Real designers would share their own calendars with this account, "Make changes to events".)
+
+*Alternative where keys are allowed:* a service account (`GOOGLE_SERVICE_ACCOUNT_EMAIL` / `_PRIVATE_KEY`), with each calendar shared to it.
 
 ## 4. Supabase (5 min)
 1. supabase.com → **New project** (free).
 2. **SQL Editor → New query** → paste `supabase/migrations/001_init.sql` → **Run**.
-3. Seed the designers (use the calendar IDs from step 3):
+3. Seed the designers (calendar IDs are in `DESIGNERS_JSON` in `.env.local` after step 3):
    ```sql
    insert into designers (code, name, calendar_id, sort_order) values
      ('ananya', 'Ananya', '<calendar id 1>', 1),
@@ -81,7 +85,6 @@ Set `EMAIL_REPLY_TO` to the inbox that should get "reply to reschedule" emails.
    ```
 2. vercel.com → **Add New → Project → Import** the repo. Framework: Next.js (auto-detected).
 3. **Environment Variables:** add everything from your `.env.local` except `DESIGNERS_JSON` (Supabase holds the roster).
-   Paste `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` exactly as in `.env.local`.
 4. **Deploy.** Your production URL is `https://<project>.vercel.app`.
 5. Check it:
    ```bash

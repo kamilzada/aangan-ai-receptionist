@@ -17,7 +17,7 @@ the designer gets a brief on Telegram, and every call lands in HubSpot and on a 
 | Qualification rules | `context/qualified.md`, **minus criterion 5** (decision-maker). Leads are scored on 4 criteria. The agent never asks who the decision-maker is. |
 | Question order | Location → house size (type + carpet sq ft, never pushed) → scope → timeline → book. |
 | Pricing | Never say any number, range or per-sq-ft rate. First mention: "It's best to come to pricing after you meet the designer and they understand your requirements." Only if the caller pushes again: the approved line from `context/pricing.md`. Asking about price never disqualifies. |
-| Booking | A **meeting with a designer** (not a site visit), in **that designer's own Google Calendar**. Round-robin across designers who have a free slot. |
+| Booking | A **meeting with a designer** (not a site visit), in **that designer's own Google Calendar**. Round-robin across designers who have a free slot. Calendar access via OAuth (MESA blocks service-account keys; user chose OAuth on 10 Oct 2026). |
 | Designer handoff | Telegram bot. Each designer taps Start once to register. |
 | Client confirmation | **Email, only if the caller says yes** when asked. Sent with Resend, with an .ics invite attached. Agent spells the address back before sending. |
 | Complaints from existing clients | No qualification. Urgent Telegram alert to Nikhil / senior designer; caller promised a senior callback within 15 min. |
@@ -141,7 +141,7 @@ clean sans body (Inter). Generous whitespace, thin rules, rounded 12px cards, no
 ## Status (10 Oct 2026)
 - All phases coded; 36 unit tests, typecheck and production build pass. Nothing has run against live services yet (no keys in `.env.local`).
 - Phase 1: replay run 10 Oct 2026: **20/20 match** `tests/expected-outcomes.json`. `gemini-2.5-flash` is closed to new keys, so the default is `gemini-3.8-flash` with fallbacks `gemini-3.5-flash`, `gemini-3.1-flash-lite` (free tier = 20 requests/day per model, 5/min). The replay is paced at 12.5 s per call; run a subset with `npm run replay -- T09 T12`.
-- Phase 2: booking endpoints not yet run against real Google Calendars.
+- Phase 2: verified 10 Oct 2026 against real calendars (slots → book → slot_taken with alternatives; round-robin moved to the next designer). Auth is **OAuth with the MESA account** (`npm run google:auth`), because MESA's Workspace blocks service-account keys; the service account remains as a fallback in `lib/google-calendar.ts`.
 - Phase 3: Telegram registration (`/api/telegram/webhook`) + briefs; roster, chat ids, round-robin and bookings in Supabase (`supabase/migrations/001_init.sql`), falling back to `DESIGNERS_JSON` + memory without Supabase.
 - Phase 4: Resend email + .ics, sent only on `email_confirmation = yes`.
 - Phase 5: `/api/vaani/webhook`. Parser built from Vaani's documented `call_postprocessing` shape, **not yet confirmed against a real payload**. Auth: `x-vaani-secret`, `?secret=` or HMAC. HubSpot uses 6 of the free plan's 10 custom properties (5 on Calls, 1 on Contacts); deals go in the default pipeline at "Appointment scheduled".
