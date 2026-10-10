@@ -146,5 +146,6 @@ clean sans body (Inter). Generous whitespace, thin rules, rounded 12px cards, no
 - Phase 3: Telegram registration (`/api/telegram/webhook`) + briefs; roster, chat ids, round-robin and bookings in Supabase (`supabase/migrations/001_init.sql`), falling back to `DESIGNERS_JSON` + memory without Supabase.
 - Phase 4: Resend email + .ics, sent only on `email_confirmation = yes`.
 - Phase 5: `/api/vaani/webhook`. Parser built from Vaani's documented `call_postprocessing` shape, **not yet confirmed against a real payload**. Auth: `x-vaani-secret`, `?secret=` or HMAC. HubSpot uses 6 of the free plan's 10 custom properties (5 on Calls, 1 on Contacts); deals go in the default pipeline at "Appointment scheduled".
+- Live-verified 10 Oct 2026: Telegram bot @aangan_bookings_kz_bot (user registered as Ananya and acts as Nikhil); HubSpot account 247653680 via a **service key** (private apps are replaced by service keys on new accounts), 6 custom properties created; simulated T01/T03/T08/T09 landed correctly, duplicate rejected. The dashboard query filters on date only, because HubSpot search sometimes fails to index custom properties.
 - Phase 6: `/dashboard` (passcode cookie); shows sample data until HubSpot is configured. **AI cost was removed** at the user's request.
 - Phase 7: `docs/SETUP.md`, `docs/VAANI_SETUP.md`, `docs/TEST_PLAN.md`.

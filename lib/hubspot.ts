@@ -182,10 +182,9 @@ export async function listAiCalls(since: Date, max = 2000): Promise<CallRow[]> {
     const r = await hs<SearchResult<P>>("POST", "/crm/v3/objects/calls/search", {
       filterGroups: [
         {
-          filters: [
-            { propertyName: "aangan_vaani_call_id", operator: "HAS_PROPERTY" },
-            { propertyName: "hs_timestamp", operator: "GTE", value: String(since.getTime()) },
-          ],
+          // Filter on the date only: HubSpot's search index sometimes lags on custom properties,
+          // so receptionist calls are picked out below by their Vaani call id.
+          filters: [{ propertyName: "hs_timestamp", operator: "GTE", value: String(since.getTime()) }],
         },
       ],
       sorts: [{ propertyName: "hs_timestamp", direction: "DESCENDING" }],
@@ -194,6 +193,7 @@ export async function listAiCalls(since: Date, max = 2000): Promise<CallRow[]> {
       ...(after ? { after } : {}),
     });
     for (const { id, properties: p } of r.results) {
+      if (!p.aangan_vaani_call_id) continue;
       out.push({
         id,
         at: p.hs_timestamp ?? "",

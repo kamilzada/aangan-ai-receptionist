@@ -61,9 +61,9 @@ Without Supabase the app still runs locally from `DESIGNERS_JSON`, but Telegram 
 
 ## 6. HubSpot (10 min)
 1. Create a free HubSpot account.
-2. **Settings (gear) → Integrations → Private apps** (may be listed under *Legacy apps*) → **Create**.
-   Scopes: `crm.objects.contacts.read/write`, `crm.objects.deals.read/write`, `crm.schemas.contacts.write`,
-   and the calls scopes if listed (`crm.objects.calls.read/write`, `crm.schemas.calls.write`) → copy the token → `HUBSPOT_PRIVATE_APP_TOKEN`.
+2. **Development → Keys → Service keys → Create service key** (new accounts have no private apps; older ones: Legacy apps).
+   Scopes: `crm.objects.contacts.read/write`, `crm.objects.deals.read/write`, `crm.schemas.contacts.read/write`
+   (calls are covered by the contacts scopes) → Create → **Show** → copy the `pat-…` key → `HUBSPOT_PRIVATE_APP_TOKEN`.
 3. `npm run hubspot:setup`: creates 6 custom properties (5 on Calls, 1 on Contacts) and checks the deal stage.
 
 **Free-plan limits, and what we chose:** 10 custom properties per account, 1 deal pipeline, 2 users.
