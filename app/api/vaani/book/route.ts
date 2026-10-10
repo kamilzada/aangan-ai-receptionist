@@ -47,11 +47,13 @@ export async function POST(req: Request) {
   }
 }
 
+// Agent-facing failures return 200 with ok:false and a sentence to say: Vaani doesn't pass non-2xx bodies to the agent.
 async function handle(req: Request): Promise<Response> {
-
-  const parsed = Input.safeParse(await readToolParams(req));
+  const params = await readToolParams(req);
+  const parsed = Input.safeParse(params);
   if (!parsed.success) {
     const fields = parsed.error.issues.map((i) => String(i.path[0]));
+    console.warn("[book] missing/invalid:", fields.join(","), "| received keys:", Object.keys(params).join(","));
     const words: Record<string, string> = {
       slot_id: "which time you'd like",
       caller_name: "your name",
@@ -65,7 +67,6 @@ async function handle(req: Request): Promise<Response> {
     const ask = [...new Set(fields)].map((f) => words[f] ?? f);
     return Response.json(
       { ok: false, reason: "missing_details", missing: fields, say: `Just before I book, could you tell me ${ask.join(", and ")}?` },
-      { status: 400 },
     );
   }
   const lead = parsed.data;
@@ -73,7 +74,13 @@ async function handle(req: Request): Promise<Response> {
   const slot = decodeSlotId(lead.slot_id);
   const designer = slot ? await findDesigner(slot.designerCode) : undefined;
   if (!slot || !designer) {
-    return Response.json({ ok: false, reason: "unknown_slot", say: "Let me check the available times again." }, { status: 400 });
+    console.warn("[book] unknown slot_id:", String(lead.slot_id).slice(0, 80));
+    return Response.json({
+      ok: false,
+      reason: "unknown_slot",
+      say: "Let me check the available times again.",
+      instruction: "Call check_designer_slots again and pass the exact slot_id of the chosen time.",
+    });
   }
 
   const start = slot.start;
