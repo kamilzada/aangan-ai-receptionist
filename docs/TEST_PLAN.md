@@ -6,7 +6,12 @@ Before you start:
 - For the email check, use the address you signed up to Resend with.
 - Open in tabs: both designer calendars, Telegram, your inbox, HubSpot (Contacts, Deals, and a contact's Activity), and `/dashboard?days=7`.
 
-Call from your own phone. Wait about 30 s after hanging up before checking: Vaani post-processes first.
+**How to place each call (no phone number needed):** Vaani → Agents → `aangan-receptionist` → **Start Test → Test with a Phone Call** →
+enter your mobile number. Vaani rings you and the agent answers as the receptionist. (Chat tests exercise the tools but
+do **not** fire the end-of-call webhook, so use phone tests for HubSpot and the dashboard.) Once a real number is attached
+under Telephony, callers can also ring in directly.
+
+Wait about 30 s after hanging up before checking: Vaani post-processes first.
 
 > No real call? `npm run simulate-call -- T09 https://<app>` sends a September transcript through the
 > same post-call pipeline (HubSpot, Telegram alert, dashboard). It doesn't test the voice part or the booking tools.
