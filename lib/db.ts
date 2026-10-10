@@ -21,7 +21,8 @@ async function rest<T>(
     method,
     headers: {
       apikey: key,
-      Authorization: `Bearer ${key}`,
+      // Legacy service_role keys are JWTs and also go in Authorization; new sb_secret_ keys must not.
+      ...(key.startsWith("eyJ") ? { Authorization: `Bearer ${key}` } : {}),
       "Content-Type": "application/json",
       ...(opts.prefer ? { Prefer: opts.prefer } : {}),
     },
