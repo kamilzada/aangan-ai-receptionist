@@ -140,7 +140,7 @@ clean sans body (Inter). Generous whitespace, thin rules, rounded 12px cards, no
 
 ## Status (10 Oct 2026)
 - All phases coded; 36 unit tests, typecheck and production build pass. Nothing has run against live services yet (no keys in `.env.local`).
-- Phase 1: `npm run replay` not yet run (needs `GEMINI_API_KEY`).
+- Phase 1: replay run 10 Oct 2026: **20/20 match** `tests/expected-outcomes.json`. `gemini-2.5-flash` is closed to new keys, so the default is `gemini-3.8-flash` with fallbacks `gemini-3.5-flash`, `gemini-3.1-flash-lite` (free tier = 20 requests/day per model, 5/min). The replay is paced at 12.5 s per call; run a subset with `npm run replay -- T09 T12`.
 - Phase 2: booking endpoints not yet run against real Google Calendars.
 - Phase 3: Telegram registration (`/api/telegram/webhook`) + briefs; roster, chat ids, round-robin and bookings in Supabase (`supabase/migrations/001_init.sql`), falling back to `DESIGNERS_JSON` + memory without Supabase.
 - Phase 4: Resend email + .ics, sent only on `email_confirmation = yes`.

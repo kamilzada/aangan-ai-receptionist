@@ -82,10 +82,50 @@ let ai: GoogleGenAI | null = null;
 export async function classifyTranscript(transcript: string): Promise<CallClassification> {
   if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not set.");
   ai ??= new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  const res = await ai.models.generateContent({
-    model: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
-    contents: `${CLASSIFY_INSTRUCTIONS}\n\nTRANSCRIPT:\n${transcript}`,
-    config: { responseMimeType: "application/json", responseJsonSchema: jsonSchema, temperature: 0 },
-  });
-  return CallClassification.parse(JSON.parse(res.text ?? "{}"));
+  // Free tier: 20 requests/day per model. When one Flash model's daily quota is used up, move to the next.
+  const models = [
+    process.env.GEMINI_MODEL || "gemini-3.8-flash",
+    ...(process.env.GEMINI_FALLBACK_MODELS ?? "gemini-3.5-flash,gemini-3.1-flash-lite").split(",").map((m) => m.trim()),
+  ].filter((m, i, all) => m && all.indexOf(m) === i);
+
+  for (const [i, model] of models.entries()) {
+    try {
+      const res = await withRetry(() =>
+        ai!.models.generateContent({
+          model,
+          contents: `${CLASSIFY_INSTRUCTIONS}\n\nTRANSCRIPT:\n${transcript}`,
+          config: { responseMimeType: "application/json", responseJsonSchema: jsonSchema, temperature: 0 },
+        }),
+      );
+      return CallClassification.parse(JSON.parse(res.text ?? "{}"));
+    } catch (err) {
+      const msg = String((err as Error).message ?? err);
+      // Daily quota used up, model retired, or still overloaded after retries: another Flash model may be fine.
+      const unavailable = /PerDay|"code":\s*(404|429|500|503)|NOT_FOUND|UNAVAILABLE|RESOURCE_EXHAUSTED/.test(msg);
+      if (!unavailable || i === models.length - 1) throw err;
+      console.warn(`[classify] ${model} unavailable (${msg.match(/"status":"(\w+)"/)?.[1] ?? "error"}); trying ${models[i + 1]}`);
+    }
+  }
+  throw new Error("unreachable");
+}
+
+/**
+ * Retries rate limits (429, free tier is 5 requests/min) and overload (503), honouring Gemini's "retry in Ns".
+ * Total waiting is capped so the webhook stays inside Vercel's 60 s limit.
+ */
+async function withRetry<T>(fn: () => Promise<T>, maxWaitMs = 15_000): Promise<T> {
+  let waited = 0;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const msg = String((err as Error).message ?? err);
+      const retryable = /"code":\s*(429|500|503)|RESOURCE_EXHAUSTED|UNAVAILABLE/.test(msg) && !/PerDay/.test(msg);
+      const hinted = Number(msg.match(/retry in ([\d.]+)s/i)?.[1]);
+      const delay = Math.ceil((Number.isFinite(hinted) ? hinted + 1 : 2 ** attempt * 2) * 1000);
+      if (!retryable || attempt >= 5 || waited + delay > maxWaitMs) throw err;
+      await new Promise((r) => setTimeout(r, delay));
+      waited += delay;
+    }
+  }
 }

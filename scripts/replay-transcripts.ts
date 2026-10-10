@@ -32,7 +32,11 @@ async function main() {
   console.log(`Found ${ids.length} phone transcripts.\n`);
   let matches = 0;
   const rows: string[] = [];
-  for (const id of ids) {
+  // Free tier allows 5 requests/minute; space calls out (REPLAY_DELAY_MS=0 on a paid key).
+  const gap = Number(process.env.REPLAY_DELAY_MS ?? 12_500);
+  const only = process.argv.slice(2).map((a) => a.toUpperCase());
+  for (const [n, id] of ids.filter((i) => !only.length || only.includes(i)).entries()) {
+    if (n > 0 && gap > 0) await new Promise((r) => setTimeout(r, gap));
     const exp = expected[id];
     try {
       const got = await classifyTranscript(calls[id]);
@@ -45,11 +49,11 @@ async function main() {
           (ok ? "" : `\n      ${got.summary}`),
       );
     } catch (e) {
-      rows.push(`ERROR ${id}  ${(e as Error).message}`);
+      rows.push(`ERROR ${id}  ${(e as Error).message.slice(0, 160)}`);
     }
     console.log(rows[rows.length - 1]);
   }
-  console.log(`\n${matches}/${ids.length} match the expected outcome (target: 18+).`);
+  console.log(`\n${matches}/${only.length || ids.length} match the expected outcome (target: 18+).`);
 }
 
 if (require.main === module) main();
